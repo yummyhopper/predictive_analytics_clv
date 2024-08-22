@@ -8,7 +8,7 @@ Customer Lifetime Value (CLV) prediction is an essential task for banks aiming t
 
 ### Contents
 
-The R notebook which contains the code is the only file in the repository, but the HTML version with the cell outputs can be viewed here:
+The R notebook which contains the code is the only file in the repository, but the HTML version with the cell outputs can be viewed here: https://nbviewer.org/github/yummyhopper/predictive_analytics_clv/blob/main/predictive_analytics.nb.html
 
 ### Data
 
