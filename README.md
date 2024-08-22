@@ -12,7 +12,7 @@ The R notebook which contains the code is the only file in the repository, but t
 
 ### Data
 
-The dataset used in this project was provided by Wharton Customer Analytics, in conjunction with partner companies. This is a real data sets provided for educational purposes. I am not able to put the datasets used in these assignments into this repository as that would be a breach of the Data User Agreement I've signed. The dataset contains apple product reviews with six fields: Review_ID, Item_ID, Review_date, Content Rating, and Helpful_votes.
+The dataset used in this project was provided by Wharton Customer Analytics, in conjunction with partner companies. This is a real data sets provided for educational purposes. I am not able to put the datasets used in these assignments into this repository as that would be a breach of the Data User Agreement I've signed. The dataset contains bank churn data with twenty fields: Churned (1-0), Customer_Age, Gender, Dependent_count, Education_Level, Marital_StatusIncome_Category, Card_Category, Months_on_book, Months_Inactive_12_mon, Contacts_Count_12_mon, Credit_Limit, Total_Revolving_Bal, Total_Amt_Chng_Q4_Q1, Total_Trans_Amt, Total_Trans_Ct, Total_Amt_Chng_Q4_Q1, Total_Trans_Amt, Total_Trans_Ct, Total_Ct_Chng_Q4_Q1, and Avg_Utilization_Ratios.
 
 ### Tools + Skills
 
