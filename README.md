@@ -1,6 +1,6 @@
 # Predicting CLV of banking customers using ML
 
-![random_forest_full_tree](https://github.com/user-attachments/assets/0635cab1-ea80-46a8-b34f-6befdc3ec9c7)
+![1660642207466](https://github.com/user-attachments/assets/5a4b3371-8b68-41b1-8212-46315f9dbf7e)
 
 ### Introduction
 
