@@ -1,0 +1,148 @@
+---
+title: "Predicting CLV of banking customers using ML"
+output: html_notebook
+---
+Install and load in random forest and xg boost packages
+```{r}
+library(randomForest)
+library(xgboost)
+library(caret)
+```
+Read in bank churn data
+```{r}
+bank = read.csv("bank_churn.csv")
+head(bank)
+```
+Take a sample of that dataset
+```{r}
+short_data = bank[1:100,1:4]
+summary(short_data)
+```
+## Random Forest
+For a random forest for classification, the outcome has to be a factor. That's why I use factor(Churned). 
+```{r}
+rf = randomForest(factor(Churned) ~ . , data = short_data, importance = TRUE)
+rf
+```
+We can look at the importance
+```{r}
+rf$importance
+```
+Summarize the Dependent_count
+```{r}
+summary(short_data$Dependent_count)
+```
+Let's predict with some new data:
+```{r}
+newdata = rbind(
+  data.frame(
+    Customer_Age = 20,
+    Gender = "M",
+    Dependent_count = 0
+  ),
+  data.frame(
+    Customer_Age = 35,
+    Gender = "F",
+    Dependent_count = 1
+  )
+)
+
+predict(rf, newdata, type = "response")
+```
+Notice this difference from logistic regression: type = "response" gives you the predicted outcome, not a probability. To get a probability, we do:
+```{r}
+predict(rf, newdata, type = "prob")
+```
+## XGBoost
+Formatting the data for XGBoost is a bit more tedious...
+```{r}
+y = short_data$Churned == 1
+x = model.matrix(~ 0 + . - Churned, data = short_data)
+
+xgb = xgboost(data = x, label = y, nrounds = 500, objective = "binary:logistic")
+xgb
+```
+Making predictions with new data is again a little tedious...
+
+```{r}
+X_new = model.matrix(~ 0 + ., data = newdata)
+X_new = X_new[,colnames(c("Customer_Age", "Gender", "Dependent_count"))]
+```
+XGBoost only returns predicted probabilities:
+```{r}
+predict(xgb, X_new)
+```
+## Predicting Churn
+Split the data into in-sample and out-of-sample data
+```{r}
+train_rows = createDataPartition(y = 1:nrow(bank), p = 0.8, list = FALSE)
+train = bank[train_rows, ]
+test = bank[-train_rows, ]
+```
+Step 1: Run each of the competing models using the training data
+```{r}
+lr_churn = glm(Churned == 1 ~ ., data = train, family = binomial)
+rf_churn = randomForest(factor(Churned == 1) ~ ., data = train)
+```
+XGBoost is a little more complicated: For XGBoost, we can't use a data.frame. To convert the data.frame into a numeric matrix, with the correct dummy variables, we do:
+```{r}
+xgb_y_churn_train = train[,"Churned"]   
+xgb_x_churn_train = model.matrix(~ 0 + . - Churned, data = train)
+xgb_x_churn_test = model.matrix(~ 0 + . - Churned, data = test)
+```
+Then to run the model we call:
+```{r}
+xgb_churn = xgboost(
+  data = xgb_x_churn_train,
+  label = xgb_y_churn_train,
+  objective = "binary:logistic",
+  nrounds = 50
+)
+
+```
+Step 2: Make predictions in the holdout data
+```{r}
+lr_churn_prob = predict(lr_churn, newdata = test, type = "response")
+lr_churn_pred = lr_churn_prob > 0.5
+
+rf_churn_prob = predict(rf_churn, newdata = test, type = "prob")[,"TRUE"]
+rf_churn_pred = rf_churn_prob > 0.5
+
+xgb_churn_prob = predict(xgb_churn, newdata = xgb_x_churn_test)
+xgb_churn_pred = xgb_churn_prob > 0.5
+```
+Step 3: Use the confusionMatrix() function from the caret package
+```{r}
+confusionMatrix(factor(lr_churn_pred), factor((test$Churned == 1)))
+confusionMatrix(factor(rf_churn_pred), factor((test$Churned == 1)))
+confusionMatrix(factor(xgb_churn_pred), factor((test$Churned == 1)))
+```
+## Computing CLV
+For margin, assume that Blue = 5, Silver = 10, Platinum = 15. And assume that there is also some return on the revolving balance (1.5%) 
+```{r}
+base_fee = ifelse(test$Card_Category == "Blue", 5,ifelse(test$Card_Category == "Silver", 10, 15))
+margin = base_fee + 0.015*test$Total_Revolving_Bal
+```
+Retention rate
+```{r}
+r_lr = 1 - lr_churn_prob
+r_rf = 1 - rf_churn_prob
+r_xgb = 1 - xgb_churn_prob
+```
+Now, let's plug into the CLV formula, assuming a monthly interest rate of 0.007:
+```{r}
+clv_lr = margin * (r_lr / (1 + 0.007 - r_lr))
+clv_rf = margin * (r_rf / (1 + 0.007 - r_rf))
+clv_xgb = margin * (r_xgb / (1 + 0.007 - r_xgb))
+```
+How do the models match up on CLV?
+```{r}
+plot(clv_lr, clv_rf)
+abline(0, 1, col = "red", lty = 2)
+
+plot(clv_rf, clv_xgb)
+abline(0, 1, col = "red", lty = 2)
+
+plot(r_rf, r_xgb)
+abline(0, 1, col = "red", lty = 2)
+```
